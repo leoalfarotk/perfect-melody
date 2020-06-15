@@ -1,16 +1,21 @@
 import pretty_midi
+import matplotlib.pyplot as plt
 
-mid = pretty_midi.PrettyMIDI('dataset/iceice.mid')
+mid = pretty_midi.PrettyMIDI('dataset/under_pressure.mid')
 print("Total ticks:", mid.time_to_tick(mid.get_end_time()))
 print("Time signatures:", mid.time_signature_changes)
 print("Resolution:", mid.resolution)
 # help(pretty_midi.Note)
+new_mid = pretty_midi.PrettyMIDI()
+new_ch = pretty_midi.Instrument(0)
 new_mid_notes = []
 avg_data = []
 num = mid.time_signature_changes[0].numerator
 denom = mid.time_signature_changes[0].denominator
 resolution = mid.resolution
 ticks_per_note = num * (resolution / (denom / 4))
+total_bars = int(mid.time_to_tick(mid.get_end_time()) // ticks_per_note)
+defined_values = [1, 2, 4, 8, 16, 32, 3, 6, 12, 24, 48]
 
 
 def pitch_to_freq(_note):
@@ -43,10 +48,10 @@ for current_channel, instrument in enumerate(mid.instruments):
         if starting_tick not in bar.keys():
             # We substract 12 pitch levels if
             # the note belongs to a different clef
-            sum_pitch += note.pitch if note.pitch < 60 else (note.pitch - 12)
+            sum_pitch += note.pitch if note.pitch < 60 else (note.pitch - 13)
             sum_dur += note.get_duration()
             bar[starting_tick] = (
-                note.pitch, current_channel, nro_bar, mid.time_to_tick(note.end), mid.time_to_tick(note.duration))
+                note.pitch, current_channel, nro_bar, mid.time_to_tick(note.end), mid.time_to_tick(note.duration), note.velocity)
         else:
             # If the current note overlaps with a previous one
             # (they play at the same time/tick)
@@ -54,14 +59,14 @@ for current_channel, instrument in enumerate(mid.instruments):
             if note.pitch > bar[starting_tick][0]:
                 old_note_pitch = bar[mid.time_to_tick(note.start)][0]
 
-                sum_pitch -= old_note_pitch if old_note_pitch else (old_note_pitch - 12)
+                sum_pitch -= old_note_pitch if old_note_pitch else (old_note_pitch - 13)
                 sum_dur -= mid.tick_to_time(bar[starting_tick][4])
 
-                sum_pitch += note.pitch if note.pitch < 60 else (note.pitch - 12)
+                sum_pitch += note.pitch if note.pitch < 60 else (note.pitch - 13)
                 sum_dur += note.get_duration()
 
                 bar[starting_tick] = (
-                    note.pitch, current_channel, nro_bar, mid.time_to_tick(note.end), mid.time_to_tick(note.duration))
+                    note.pitch, current_channel, nro_bar, mid.time_to_tick(note.end), mid.time_to_tick(note.duration), note.velocity)
 
     notes_per_bar = len(bar.keys())
     avg_data_ch[current_bar] = (sum_pitch / notes_per_bar, sum_dur / notes_per_bar)
@@ -70,42 +75,49 @@ for current_channel, instrument in enumerate(mid.instruments):
     new_mid_notes.append(ch)
     avg_data.append(avg_data_ch)
 
-for channel in new_mid_notes:
-    for bar in channel:
-        for starting_tick in bar:
-            print("nota:{}  canal:{}  bar:{}  inicio:{}".format(bar[starting_tick][0], bar[starting_tick][1],
-                                                                bar[starting_tick][2], starting_tick))
-
 print("================================================================")
 
-for channel in avg_data:
-    for bar in channel:
-        print("bar:{} avg_pitch: {} avg_dur:{}".format(bar, channel[bar][0], channel[bar][1]))
-    print("----------------------")
-
-w = 0.5
-
-denom_pitch = {}
-denom_dur = {}
 melody_route = {}
 
-for index, channel in enumerate(avg_data):
-    for bar in channel:
-        if bar not in denom_pitch.keys():
-            current_pitch = current_dur = 0
+# For each instant of time, get
+# the bar with the highest pitch
+for i in range(0, total_bars):
+    selected_channel = (-1, -1)
 
-            for c in avg_data:
-                if bar in c.keys():
-                    current_pitch += c[bar][0]
-                    current_dur += c[bar][1]
+    for index, channel in enumerate(avg_data):
+        if i in channel.keys():
+            bar_avg_pitch = channel[i][0]
 
-            denom_pitch[bar] = current_pitch
-            denom_dur[bar] = current_dur
+            if bar_avg_pitch > selected_channel[1]:
+                selected_channel = (index, bar_avg_pitch)
 
-        mms = (1 / len(avg_data)) * ((channel[bar][0] / denom_pitch[bar]) + (w * (channel[bar][1] / denom_dur[bar])))
+    melody_route[i] = selected_channel[0]
 
-        if bar not in melody_route.keys() or mms > melody_route[bar][1]:
-            melody_route[bar] = (index, mms)
-    print("----------------------")
+visualization = []
+vis_pitch = []
+vis_ticks = []
 
-print(melody_route)
+for bar_index, selected_channel in melody_route.items():
+    if selected_channel == -1:
+        continue
+
+    for original_channel in new_mid_notes[selected_channel]:
+        channel_keys = list(original_channel.keys())
+        first_key = channel_keys[0]
+
+        if bar_index == original_channel[first_key][2]:
+            for tiempo in original_channel:
+                note = pretty_midi.Note(velocity=original_channel[tiempo][5], pitch=original_channel[tiempo][0],
+                                        start=mid.tick_to_time(tiempo), end=mid.tick_to_time(original_channel[tiempo][3]))
+                new_ch.notes.append(note)
+                vis_pitch.append(original_channel[tiempo][0])
+                vis_ticks.append(mid.tick_to_time(tiempo))
+
+            break
+
+visualization += [vis_ticks, vis_pitch]
+new_mid.instruments.append(new_ch)
+new_mid.write('agggg.mid')
+
+plt.plot(*visualization)
+plt.show()
