@@ -1,7 +1,7 @@
 import pretty_midi
 import matplotlib.pyplot as plt
 
-mid = pretty_midi.PrettyMIDI('dataset/under_pressure.mid')
+mid = pretty_midi.PrettyMIDI('dataset/cant_stop2.mid')
 print("Total ticks:", mid.time_to_tick(mid.get_end_time()))
 print("Time signatures:", mid.time_signature_changes)
 print("Resolution:", mid.resolution)
@@ -10,8 +10,14 @@ new_mid = pretty_midi.PrettyMIDI()
 new_ch = pretty_midi.Instrument(0)
 new_mid_notes = []
 avg_data = []
-num = mid.time_signature_changes[0].numerator
-denom = mid.time_signature_changes[0].denominator
+
+if len(mid.time_signature_changes) == 0:
+    num = 4
+    denom = 4
+else:
+    num = mid.time_signature_changes[0].numerator
+    denom = mid.time_signature_changes[0].denominator
+
 resolution = mid.resolution
 ticks_per_note = num * (resolution / (denom / 4))
 total_bars = int(mid.time_to_tick(mid.get_end_time()) // ticks_per_note)
