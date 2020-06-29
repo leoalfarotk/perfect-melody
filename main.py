@@ -67,13 +67,13 @@ def process_file(file_name):
                 # (they play at the same time/tick)
                 # we will keep the one with the highest pitch
                 new_pitch = note.pitch if note.pitch < 60 else (note.pitch - 13)
+                old_pitch = bar[starting_tick][0] if bar[starting_tick][0] < 60 else (bar[starting_tick][0] - 13)
 
-                if new_pitch > bar[starting_tick][0]:
-                    old_note_pitch = bar[mid.time_to_tick(note.start)][0]
-                    old_note_duration = mid.tick_to_time(bar[starting_tick][4])
+                if new_pitch > old_pitch:
+                    old_duration = mid.tick_to_time(bar[starting_tick][4])
 
-                    sum_pitch -= old_note_pitch
-                    sum_dur -= old_note_duration
+                    sum_pitch -= old_pitch
+                    sum_dur -= old_duration
 
                     sum_pitch += new_pitch
                     sum_dur += note.get_duration()
