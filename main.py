@@ -24,12 +24,8 @@ def process_file(file_name):
         denom = mid.time_signature_changes[0].denominator
 
     resolution = mid.resolution
-    ticks_per_note = num * (resolution / (denom / 4))
-    total_bars = int(mid.time_to_tick(mid.get_end_time()) // ticks_per_note)
-    defined_values = [1, 2, 4, 8, 16, 32, 3, 6, 12, 24, 48]
-
-    def pitch_to_freq(_note):
-        return 2 ** ((_note - 69) / 12) * 440
+    ticks_per_bar = num * (resolution / (denom / 4))
+    total_bars = int(mid.time_to_tick(mid.get_end_time()) // ticks_per_bar)
 
     for current_channel, instrument in enumerate(mid.instruments):
         if instrument.is_drum:
@@ -40,11 +36,11 @@ def process_file(file_name):
         bar = {}
         sum_pitch = 0
         sum_dur = 0
-        current_bar = int(mid.time_to_tick(instrument.notes[0].start) // ticks_per_note)
+        current_bar = int(mid.time_to_tick(instrument.notes[0].start) // ticks_per_bar)
 
         for index, note in enumerate(instrument.notes):
             starting_tick = mid.time_to_tick(note.start)
-            nro_bar = int(starting_tick // ticks_per_note)
+            nro_bar = int(starting_tick // ticks_per_bar)
 
             if nro_bar != current_bar:
                 notes_per_bar = len(bar.keys())
