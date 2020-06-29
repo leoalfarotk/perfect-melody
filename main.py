@@ -1,33 +1,27 @@
 import pretty_midi
 import matplotlib.pyplot as plt
-
-first_file_name = 'chumbawamba_i_get_knocked_down_1'
-second_file_name = 'chumbawamba_i_get_knocked_down_2'
+import os
 
 
-def process_file(file_name):
-    mid = pretty_midi.PrettyMIDI('dataset/' + file_name + '.mid')
-    print("Total ticks:", mid.time_to_tick(mid.get_end_time()))
-    print("Time signatures:", mid.time_signature_changes)
-    print("Resolution:", mid.resolution)
-    # help(pretty_midi.Note)
-    new_mid = pretty_midi.PrettyMIDI()
-    new_ch = pretty_midi.Instrument(0)
+def extract_notes(midi_handler: pretty_midi.PrettyMIDI):
+    print("Total ticks:", midi_handler.time_to_tick(midi_handler.get_end_time()))
+    print("Time signatures:", midi_handler.time_signature_changes)
+    print("Resolution:", midi_handler.resolution)
     new_mid_notes = []
     avg_data = []
 
-    if len(mid.time_signature_changes) == 0:
+    if len(midi_handler.time_signature_changes) == 0:
         num = 4
         denom = 4
     else:
-        num = mid.time_signature_changes[0].numerator
-        denom = mid.time_signature_changes[0].denominator
+        num = midi_handler.time_signature_changes[0].numerator
+        denom = midi_handler.time_signature_changes[0].denominator
 
-    resolution = mid.resolution
+    resolution = midi_handler.resolution
     ticks_per_bar = num * (resolution / (denom / 4))
-    total_bars = int(mid.time_to_tick(mid.get_end_time()) // ticks_per_bar)
+    total_bars = int(midi_handler.time_to_tick(midi_handler.get_end_time()) // ticks_per_bar)
 
-    for current_channel, instrument in enumerate(mid.instruments):
+    for current_channel, instrument in enumerate(midi_handler.instruments):
         if instrument.is_drum:
             continue
 
@@ -36,10 +30,10 @@ def process_file(file_name):
         bar = {}
         sum_pitch = 0
         sum_dur = 0
-        current_bar = int(mid.time_to_tick(instrument.notes[0].start) // ticks_per_bar)
+        current_bar = int(midi_handler.time_to_tick(instrument.notes[0].start) // ticks_per_bar)
 
         for index, note in enumerate(instrument.notes):
-            starting_tick = mid.time_to_tick(note.start)
+            starting_tick = midi_handler.time_to_tick(note.start)
             nro_bar = int(starting_tick // ticks_per_bar)
 
             if nro_bar != current_bar:
@@ -56,7 +50,8 @@ def process_file(file_name):
                 sum_pitch += note.pitch if note.pitch < 60 else (note.pitch - 13)
                 sum_dur += note.get_duration()
                 bar[starting_tick] = (
-                    note.pitch, current_channel, nro_bar, mid.time_to_tick(note.end), mid.time_to_tick(note.duration),
+                    note.pitch, current_channel, nro_bar, midi_handler.time_to_tick(note.end),
+                    midi_handler.time_to_tick(note.duration),
                     note.velocity)
             else:
                 # If the current note overlaps with a previous one
@@ -66,7 +61,7 @@ def process_file(file_name):
                 old_pitch = bar[starting_tick][0] if bar[starting_tick][0] < 60 else (bar[starting_tick][0] - 13)
 
                 if new_pitch > old_pitch:
-                    old_duration = mid.tick_to_time(bar[starting_tick][4])
+                    old_duration = midi_handler.tick_to_time(bar[starting_tick][4])
 
                     sum_pitch -= old_pitch
                     sum_dur -= old_duration
@@ -75,8 +70,8 @@ def process_file(file_name):
                     sum_dur += note.get_duration()
 
                     bar[starting_tick] = (
-                        note.pitch, current_channel, nro_bar, mid.time_to_tick(note.end),
-                        mid.time_to_tick(note.duration), note.velocity)
+                        note.pitch, current_channel, nro_bar, midi_handler.time_to_tick(note.end),
+                        midi_handler.time_to_tick(note.duration), note.velocity)
 
         notes_per_bar = len(bar.keys())
         avg_data_ch[current_bar] = (sum_pitch / notes_per_bar, sum_dur / notes_per_bar)
@@ -85,8 +80,10 @@ def process_file(file_name):
         new_mid_notes.append(ch)
         avg_data.append(avg_data_ch)
 
-    print("================================================================")
+    return [avg_data, new_mid_notes, total_bars]
 
+
+def generate_melody(average_data, total_bars):
     melody_route = {}
 
     # For each instant of time, get
@@ -94,7 +91,7 @@ def process_file(file_name):
     for i in range(0, total_bars):
         selected_channel = (-1, -1)
 
-        for index, channel in enumerate(avg_data):
+        for index, channel in enumerate(average_data):
             if i in channel.keys():
                 bar_avg_pitch = channel[i][0]
 
@@ -103,9 +100,20 @@ def process_file(file_name):
 
         melody_route[i] = selected_channel[0]
 
+    return melody_route
+
+
+def process_file(file_path, file_name, generate_midi=False, generate_graph=False, generate_text_file=False):
+    mid_handler = pretty_midi.PrettyMIDI(os.path.join(file_path, file_name))
+    [avg_data, new_mid_notes, total_bars] = extract_notes(mid_handler)
+    melody_route = generate_melody(avg_data, total_bars)
+    new_mid = pretty_midi.PrettyMIDI()
+    new_ch = pretty_midi.Instrument(0)
+
     visualization = []
     vis_pitch = []
     vis_ticks = []
+    pitch_list = []
 
     for bar_index, selected_channel in melody_route.items():
         if selected_channel == -1:
@@ -117,24 +125,47 @@ def process_file(file_name):
 
             if bar_index == original_channel[first_key][2]:
                 for time in original_channel:
-                    note = pretty_midi.Note(velocity=original_channel[time][5], pitch=original_channel[time][0],
-                                            start=mid.tick_to_time(time),
-                                            end=mid.tick_to_time(original_channel[time][3]))
-                    new_ch.notes.append(note)
-                    vis_pitch.append(original_channel[time][0])
-                    vis_ticks.append(mid.tick_to_time(time))
+                    if generate_midi:
+                        note = pretty_midi.Note(velocity=original_channel[time][5], pitch=original_channel[time][0],
+                                                start=mid_handler.tick_to_time(time),
+                                                end=mid_handler.tick_to_time(original_channel[time][3]))
+                        new_ch.notes.append(note)
+
+                    if generate_graph:
+                        vis_pitch.append(original_channel[time][0])
+                        vis_ticks.append(mid_handler.tick_to_time(time))
+
+                    if generate_text_file:
+                        pitch_list.append(original_channel[time][0])
 
                 break
 
-    visualization += [vis_ticks, vis_pitch]
+    if generate_midi:
+        new_mid.instruments.append(new_ch)
+        new_mid.write(file_name)
 
-    new_mid.instruments.append(new_ch)
-    new_mid.write(file_name + '.mid')
+    if generate_graph:
+        visualization += [vis_ticks, vis_pitch]
+
+    if generate_text_file:
+        with open(file_name + '.txt', 'w') as writer:
+            writer.write(','.join(str(e) for e in pitch_list))
 
     return visualization
 
 
-first_graph = process_file(first_file_name)
-second_graph = process_file(second_file_name)
-plt.plot(*first_graph, *second_graph)
-plt.show()
+dataset_path = 'dataset'
+#first_file_name = 'chumbawamba_i_get_knocked_down_1.mid'
+#second_file_name = 'chumbawamba_i_get_knocked_down_2.mid'
+
+#first_graph = process_file(dataset_path, first_file_name, generate_graph=True)
+#second_graph = process_file(dataset_path, second_file_name, generate_graph=True)
+#plt.plot(*first_graph, *second_graph)
+#plt.show()
+
+
+for file in os.listdir(dataset_path):
+    filename = os.fsdecode(file)
+
+    if filename.endswith('.mid') or filename.endswith('.midi'):
+        process_file(dataset_path, filename, generate_text_file=True)
