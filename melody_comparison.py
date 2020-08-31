@@ -9,16 +9,32 @@ from dtw import *
 def dynamic_alignment(cut_size, _song, hum):
     i = 0
     min_distance = float('Inf')
+    best_i = i
 
     while i < len(_song):
         ini = i
-        fin = i + cut_size - 1
+        fin = ini + cut_size - 1
         if fin > len(_song) - 1:
             fin = len(_song) - 1
         alignment = dtw(hum, _song[ini:fin], keep_internals=True)
         if alignment.distance < min_distance:
             min_distance = alignment.distance
+            best_i = i
         i = i + cut_size
+
+    ini = best_i
+    fin = ini + cut_size - 1
+
+    if fin > len(_song) - 1:
+        fin = len(_song) - 1
+        # Penalization due to a shorter
+        # subsequence than the humming's length
+        min_distance += 50
+
+    # Show graph for analysis purposes
+    dtw(hum, _song[ini:fin], keep_internals=True,
+        step_pattern=rabinerJuangStepPattern(6, "c")) \
+        .plot(type="twoway", offset=-2)
 
     return min_distance
 
@@ -56,6 +72,7 @@ for song in wavs:
     start_time = time()
     distance = dynamic_alignment(len(hummed_melody), melody, hummed_melody)
     elapsed_time = time() - start_time
+    print('___________________________')
     print(song)
     print('Elapsed time: %f' % elapsed_time)
     print('DTW distance: %f' % distance)
@@ -70,6 +87,7 @@ for song in midis:
     start_time = time()
     distance = dynamic_alignment(len(hummed_melody), melody, hummed_melody)
     elapsed_time = time() - start_time
+    print('___________________________')
     print(song)
     print('Elapsed time: %f' % elapsed_time)
     print('DTW distance: %f' % distance)
