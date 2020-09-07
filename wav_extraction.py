@@ -10,4 +10,4 @@ def extract_melody_from_wav(file_name):
     contour_extractor_db = essentia.standard.PitchContourSegmentation()
     _onset_db, _duration_db, _MIDI_pitch_db = contour_extractor_db(pitch_values_db, audio_db)
 
-    return _onset_db, _duration_db, _MIDI_pitch_db
+    return _onset_db, _duration_db, pitch_values_db

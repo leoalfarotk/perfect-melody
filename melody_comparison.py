@@ -60,7 +60,7 @@ def process_humming(filename):
     contour_extractor = essentia.standard.PitchContourSegmentation()
     _onset, _duration, _MIDI_pitch = contour_extractor(pitch_values, audio)
 
-    return _onset, _duration, _MIDI_pitch
+    return _onset, _duration, pitch_values
 
 
 def calculate_gradient_vector(melody):
@@ -114,29 +114,31 @@ def run_comparison(humming_filename):
 
     print('Comparing with MIDI files...')
 
-    for song in midis:
-        melody = read_melody_files(global_path + 'midis/' + song)
-        # start_time = time()
-        distance = dynamic_alignment(len(hummed_melody), melody, hummed_melody)
-        # distance = np.corrcoef(hummed_melody, melody)
-        # gradients = calculate_gradient_vector(melody)
-        # distance = dynamic_alignment(len(hummed_melody), gradients, hummed_melody_gradient)
-        # elapsed_time = time() - start_time
-        midi_results[song] = distance
-        # print('___________________________')
-        # print(song)
-        # print(melody)
-        # print(gradients)
-        # print('Elapsed time: %f' % elapsed_time)
-        # print('DTW distance: %f' % distance)
+    if False:
+        for song in midis:
+            melody = read_melody_files(global_path + 'midis/' + song)
+            # start_time = time()
+            distance = dynamic_alignment(len(hummed_melody), melody, hummed_melody)
+            # distance = np.corrcoef(hummed_melody, melody)
+            # gradients = calculate_gradient_vector(melody)
+            # distance = dynamic_alignment(len(hummed_melody), gradients, hummed_melody_gradient)
+            # elapsed_time = time() - start_time
+            midi_results[song] = distance
+            # print('___________________________')
+            # print(song)
+            # print(melody)
+            # print(gradients)
+            # print('Elapsed time: %f' % elapsed_time)
+            # print('DTW distance: %f' % distance)
 
-    ordered_midi_result = OrderedDict({k: v for k, v in sorted(midi_results.items(), key=lambda item: item[1])})
+        ordered_midi_result = OrderedDict({k: v for k, v in sorted(midi_results.items(), key=lambda item: item[1])})
 
     print('Results for ' + humming_filename + ':')
     print('Wav:')
     for key, value in ordered_wav_result.items():
         print(value, key)
 
-    print('Midi:')
-    for key, value in ordered_midi_result.items():
-        print(value, key)
+    if False:
+        print('Midi:')
+        for key, value in ordered_midi_result.items():
+            print(value, key)
