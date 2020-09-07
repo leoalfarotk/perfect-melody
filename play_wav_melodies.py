@@ -8,9 +8,15 @@ from wav_extraction import extract_melody_from_wav
 global_source_path = 'dataset/sources/'
 global_destination_path = 'dataset/built_midis/'
 
-wavs = os.listdir(global_source_path + 'wavs/')
 
-for song in wavs:
+def process_all_wavs():
+    wavs = os.listdir(global_source_path + 'wavs/')
+
+    for song in wavs:
+        process_file(song)
+
+
+def process_file(song):
     start_time = time()
     notes_time, notes_duration, notes = extract_melody_from_wav(global_source_path + 'wavs/' + song)
 
@@ -19,7 +25,7 @@ for song in wavs:
 
     for x in range(0, len(notes)):
         note = pretty_midi.Note(pitch=int(notes[x]), velocity=100, start=notes_time[x],
-                                end=notes_time[x] + notes_duration[x])
+                                end=notes_time[x] + (notes_duration[x] * 2))
         new_ch.notes.append(note)
 
     new_mid.instruments.append(new_ch)
@@ -29,3 +35,6 @@ for song in wavs:
     print('____________________')
     print(song)
     print('Elapsed time: %f' % elapsed_time)
+
+
+process_all_wavs()
