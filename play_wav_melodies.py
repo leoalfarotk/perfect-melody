@@ -37,4 +37,5 @@ def process_file(song):
     print('Elapsed time: %f' % elapsed_time)
 
 
-process_all_wavs()
+#process_file('Vanessa Carlton - A Thousand Miles.wav')
+#process_all_wavs()

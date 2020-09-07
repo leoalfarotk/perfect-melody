@@ -101,8 +101,9 @@ def generate_melody(average_data, total_bars):
     return melody_route
 
 
-def extract_melody_from_midi(file_name, generate_midi=False, generate_graph=False, save_to_file=False):
-    mid_handler = pretty_midi.PrettyMIDI(file_name)
+def extract_melody_from_midi(source_path, file_name, destination_path='', generate_midi=False, generate_graph=False,
+                             save_to_file=False):
+    mid_handler = pretty_midi.PrettyMIDI(source_path + file_name)
     [avg_data, new_mid_notes, total_bars] = extract_notes(mid_handler)
     melody_route = generate_melody(avg_data, total_bars)
     new_mid = pretty_midi.PrettyMIDI()
@@ -146,7 +147,12 @@ def extract_melody_from_midi(file_name, generate_midi=False, generate_graph=Fals
         visualization += [vis_ticks, vis_pitch]
 
     if save_to_file:
-        with open(file_name + '.txt', 'w') as writer:
+        if destination_path is not '':
+            destination_file = destination_path + file_name
+        else:
+            destination_file = source_path + file_name
+
+        with open(destination_file + '.txt', 'w') as writer:
             writer.write(','.join(str(e) for e in pitch_list))
 
     return [vis_pitch, visualization]

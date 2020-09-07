@@ -31,10 +31,8 @@ def extract_melodies(run_wavs=False, run_midis=False):
 
         for song in midis:
             start_time = time()
-            melody = extract_melody_from_midi(global_source_path + 'midis/' + song)
-
-            with open(global_destination_path + 'midis/' + song + '.txt', 'w') as writer:
-                writer.write(','.join(str(e) for e in melody))
+            extract_melody_from_midi(global_source_path + 'midis/', song,
+                                     destination_path=global_destination_path + 'midis/', save_to_file=True)
 
             elapsed_time = time() - start_time
             print('____________________')
