@@ -1,0 +1,25 @@
+version: '3.2'
+
+services:
+  nginx:
+    build: ./docker/nginx/
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www/html
+    networks:
+      - dockerlocal
+
+  php:
+    build:
+      context: .
+      dockerfile: ./docker/php/Dockerfile
+    volumes:
+      - ${HOME}/.composer:/.composer
+      - ${PWD}:/var/www
+    networks:
+      - dockerlocal
+
+networks:
+  dockerlocal:
+    driver: "bridge"
