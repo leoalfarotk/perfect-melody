@@ -3,6 +3,7 @@
 return [
 
     'authorization_token' => env('AUTHORIZATION_TOKEN'),
+    'python_script' => env('PYTHON_SCRIPT'),
 
     /*
     |--------------------------------------------------------------------------

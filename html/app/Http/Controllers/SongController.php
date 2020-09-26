@@ -3,33 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Http\Responses\APIResponse;
-use Faker\Factory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SongController extends Controller
 {
     public function __invoke(Request $request)
     {
-        $faker = Factory::create();
-        $response = [];
+        $humming_file = $request->file('humming');
+        $save_name = storage_path() . '/' . Str::random();
 
-        for ($i = 0; $i < 10; ++$i) {
-            $response[] =
-                [
-                    'name' => $faker->words(4, true),
-                    'artist' => $faker->words(2, true),
-                    'confidence' => $faker->biasedNumberBetween(0, 300),
-                ];
+        $saved = Storage::put($save_name, $humming_file);
+
+        if ($saved === false) {
+            return APIResponse::error(500, 'Could not save the audio file');
         }
 
-        usort($response, function ($first, $second) {
-            if ($first['confidence'] === $second['confidence']) {
-                return 0;
-            }
+        $results = exec(config('app.python_script') . " $save_name");
+        $results = json_decode($results);
 
-            return ($first['confidence'] < $second['confidence']) ? -1 : 1;
-        });
+        dd($results);
+        unlink($save_name);
 
-        return APIResponse::done($response);
+        return APIResponse::done($results);
     }
 }
