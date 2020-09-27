@@ -20,8 +20,13 @@ class SongController extends Controller
         unlink($saved_file_path);
 
         $parsed_results = [];
+        $counter = 0;
 
         foreach ($results as $key => $value) {
+            if ($counter >= 10) {
+                break;
+            }
+
             $artist_name = explode(' - ', $key)[0];
             $song_name = explode('.', explode(' - ', $key)[1])[0];
             $confidence = $value;
@@ -31,6 +36,8 @@ class SongController extends Controller
                 'artist' => $artist_name,
                 'confidence' => $confidence,
             ];
+
+            ++$counter;
         }
 
         return APIResponse::done($parsed_results);
