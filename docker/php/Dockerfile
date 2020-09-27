@@ -30,3 +30,8 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends \
         git \
         wget \
     && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get install python3.7 python3-distutils libsndfile1 python3-venv
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python3.7 get-pip.py && rm get-pip.py
+RUN python3.7 -m venv venv
+RUN venv/bin/python3.7 -m pip install -r requirements.txt

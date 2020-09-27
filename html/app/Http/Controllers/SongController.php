@@ -11,21 +11,28 @@ class SongController extends Controller
 {
     public function __invoke(Request $request)
     {
-        $humming_file = $request->file('humming');
-        $save_name = storage_path() . '/' . Str::random();
+        $save_name = $request->file('humming')->store('');
+        $saved_file_path = storage_path() . '/app/' . $save_name;
 
-        $saved = Storage::put($save_name, $humming_file);
-
-        if ($saved === false) {
-            return APIResponse::error(500, 'Could not save the audio file');
-        }
-
-        $results = exec(config('app.python_script') . " $save_name");
+        $results = exec(config('app.python_script') . " $saved_file_path");
         $results = json_decode($results);
 
-        dd($results);
-        unlink($save_name);
+        unlink($saved_file_path);
 
-        return APIResponse::done($results);
+        $parsed_results = [];
+
+        foreach ($results as $key => $value) {
+            $artist_name = explode(' - ', $key)[0];
+            $song_name = explode('.', explode(' - ', $key)[1])[0];
+            $confidence = $value;
+
+            $parsed_results[] = [
+                'name' => $song_name,
+                'artist' => $artist_name,
+                'confidence' => $confidence,
+            ];
+        }
+
+        return APIResponse::done($parsed_results);
     }
 }

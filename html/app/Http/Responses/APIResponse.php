@@ -8,7 +8,7 @@ class APIResponse
 {
     /**
      * @param null $body
-     * @param int  $http_code
+     * @param int $http_code
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -16,7 +16,7 @@ class APIResponse
     {
         $response = ['status_code' => 0];
 
-        if ($body and ! is_array($body)) {
+        if ($body and !is_array($body)) {
             $body = $body->toArray();
         }
 
@@ -44,7 +44,7 @@ class APIResponse
     /**
      * @param        $status
      * @param        $message
-     * @param int    $http_code
+     * @param int $http_code
      *
      * @return \Illuminate\Http\JsonResponse
      */
