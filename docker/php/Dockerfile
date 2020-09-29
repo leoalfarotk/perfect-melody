@@ -11,6 +11,8 @@ RUN echo 'xdebug.remote_port=9000' >> /usr/local/etc/php/php.ini
 RUN echo 'xdebug.remote_enable=1' >> /usr/local/etc/php/php.ini
 RUN echo 'xdebug.remote_connect_back=1' >> /usr/local/etc/php/php.ini
 RUN echo 'memory_limit=1024M' >> /usr/local/etc/php/php.ini
+RUN echo 'upload_max_filesize=100M' >> /usr/local/etc/php/php.ini
+RUN echo 'post_max_size=100M' >> /usr/local/etc/php/php.ini
 
 RUN apt-get install -y git
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
