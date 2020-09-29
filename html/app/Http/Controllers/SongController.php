@@ -33,7 +33,7 @@ class SongController extends Controller
             $parsed_results[] = [
                 'name' => $song_name,
                 'artist' => $artist_name,
-                'confidence' => $confidence,
+                'confidence' => round($confidence, 3),
             ];
 
             ++$counter;
